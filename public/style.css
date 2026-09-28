@@ -293,6 +293,28 @@ body.in-game .menu { display: block; }
   font-size: 13px; font-weight: 700; max-width: min(90vw, 420px); text-align: center;
 }
 
+/* alpaca stampede when someone calls the alpaca */
+.stampede { position: fixed; inset: 0; z-index: 45; pointer-events: none; overflow: hidden; }
+.runner { position: absolute; left: calc(-1 * var(--size)); width: var(--size); animation: run 2s linear forwards; }
+.runner svg { display: block; width: 100%; overflow: visible; animation: gallop .3s ease-in-out infinite alternate; }
+.runner .wool { fill: var(--wool); }
+.runner .leg-a, .runner .leg-b { transform-box: fill-box; transform-origin: 50% 0; animation: legs .3s ease-in-out infinite alternate; }
+.runner .leg-b { animation-direction: alternate-reverse; }
+.stampede-banner {
+  position: absolute; left: 50%; top: 42%; z-index: 1; white-space: nowrap; font-size: clamp(34px, 10vw, 56px); font-weight: 900;
+  color: #fff3a8; -webkit-text-stroke: 7px var(--ink); paint-order: stroke fill; text-shadow: 0 4px 0 var(--ink);
+  transform: translate(-50%, -50%); animation: banner 2.8s ease-out forwards;
+}
+@keyframes run { to { transform: translateX(calc(100vw + 2 * var(--size))); } }
+@keyframes gallop { to { transform: translateY(-10%) rotate(-4deg); } }
+@keyframes legs { from { transform: rotate(28deg); } to { transform: rotate(-28deg); } }
+@keyframes banner {
+  0% { transform: translate(-50%, -50%) scale(.3); opacity: 0; }
+  15% { transform: translate(-50%, -50%) scale(1.12); opacity: 1; }
+  25%, 80% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
+
 @keyframes bob { 50% { transform: translateY(-9px); } }
 @keyframes pulse { 50% { transform: scale(1.04); } }
 

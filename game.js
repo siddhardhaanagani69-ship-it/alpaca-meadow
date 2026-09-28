@@ -97,7 +97,7 @@ function newRoom(name) {
   const host = makePlayer(name, token, true, 'lobby', seed);
   return {
     code: '', seed, stage: 'lobby', players: [host], warehouse: [],
-    startedAt: null, finishedAt: null, winnerId: null,
+    startedAt: null, finishedAt: null, winnerId: null, alpacaAt: null,
     feed: [{ text: `${name} opened the meadow.`, at: Date.now() }],
     touchedAt: Date.now(),
   };
@@ -112,7 +112,7 @@ function announce(room, text) {
 function publicState(room, viewer) {
   return {
     code: room.code, stage: room.stage, startedAt: room.startedAt,
-    finishedAt: room.finishedAt, winnerId: room.winnerId,
+    finishedAt: room.finishedAt, winnerId: room.winnerId, alpacaAt: room.alpacaAt,
     players: room.players.map(player => ({
       id: player.id, name: player.name, host: player.host, online: player.online,
       trayCount: player.tray.length, sos: player.tray.length >= TRAY_LIMIT,
@@ -282,6 +282,7 @@ function action(room, player, data) {
       teammate.tray = [];
       teammate.lastPick = null;
     }
+    room.alpacaAt = Date.now();
     announce(room, `${player.name} called the alpaca! Everyone's tray was cleared. 🦙`);
     checkClear(room, player);
   } else if (data.type === 'put' || data.type === 'send') {

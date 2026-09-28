@@ -34,6 +34,35 @@ const TOOL_ART = {
   hammer: '<path d="M18 50l20-20" stroke-width="7"/><path d="M30 14l16 16 6-6-16-16z" fill="currentColor"/>',
   mix: '<path d="M10 22h12c12 0 12 20 24 20h8M10 42h12c6 0 8-4 10-8M36 28c2-4 4-6 10-6h8M48 16l6 6-6 6M48 36l6 6-6 6"/>',
 };
+// Side-view running alpaca for the stampede; legs swing via CSS.
+const RUNNER = `<svg viewBox="0 0 120 100" stroke="#9b664b" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+  <circle class="wool" cx="20" cy="46" r="7"/>
+  <rect class="wool leg-a" x="28" y="56" width="9" height="32" rx="4"/><rect class="wool leg-b" x="42" y="56" width="9" height="32" rx="4"/>
+  <rect class="wool leg-b" x="68" y="56" width="9" height="32" rx="4"/><rect class="wool leg-a" x="82" y="56" width="9" height="32" rx="4"/>
+  <path class="wool" d="M78 46V18a8 8 0 0 1 16 0v28z"/>
+  <path class="wool" d="M22 60a10 10 0 0 1 4-18 12 12 0 0 1 20-8 12 12 0 0 1 22 0 12 12 0 0 1 22 6 10 10 0 0 1 2 18 10 10 0 0 1-12 10H34a10 10 0 0 1-12-8z"/>
+  <path class="wool" d="M84 9l-3-10 8 6zM91 7l1-10 5 8z"/>
+  <ellipse class="wool" cx="92" cy="16" rx="13" ry="10"/>
+  <ellipse cx="104" cy="20" rx="7" ry="6" fill="#f7dfbb"/>
+  <circle cx="95" cy="13" r="2.2" fill="#543a34" stroke="none"/><ellipse cx="95" cy="20" rx="3" ry="2" fill="#f5b4a2" stroke="none"/>
+  <circle cx="108" cy="18" r="1.3" fill="#543a34" stroke="none"/>
+</svg>`;
+const WOOL = ['#fff7e5', '#fff7e5', '#e8c49a', '#f7c6d6', '#d9c8f2', '#c9e7f5', '#b98b6a'];
+
+function stampede() {
+  const herd = make('div', 'stampede');
+  herd.setAttribute('aria-hidden', 'true');
+  herd.append(make('div', 'stampede-banner', 'Alpaca time!'));
+  for (let i = 0; i < 9; i++) {
+    const runner = make('div', 'runner');
+    runner.innerHTML = RUNNER;
+    runner.style.cssText = `top:${4 + Math.random() * 80}%;--size:${70 + Math.random() * 60}px;--wool:${WOOL[i % WOOL.length]};animation-delay:${(Math.random() * .9).toFixed(2)}s;animation-duration:${(1.5 + Math.random()).toFixed(2)}s`;
+    herd.append(runner);
+  }
+  document.body.append(herd);
+  setTimeout(() => herd.remove(), 3800);
+}
+
 function art(type, tool = false) {
   const span = make('span', tool ? 'tool-icon' : 'icon');
   span.innerHTML = tool
@@ -275,6 +304,7 @@ function renderFeed() {
 
 function render(next) {
   if (state && state.self.tray.join('|') !== next.self.tray.join('|')) selectedTrayIndex = null;
+  if (state && next.alpacaAt && next.alpacaAt !== state.alpacaAt) stampede();
   state = next;
   $('home').classList.add('hidden');
   $('room').classList.remove('hidden');

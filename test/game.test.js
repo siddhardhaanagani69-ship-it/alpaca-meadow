@@ -23,6 +23,19 @@ test('one player can start and clear alone', () => {
   assert.equal(room.stage, 'hard');
 });
 
+test('calling the alpaca clears every tray and tells every player', () => {
+  const room = newRoom('Host');
+  room.players.push(makePlayer('Two', 'Two', false, 'lobby', room.seed));
+  const [host, teammate] = room.players;
+  action(room, host, { type: 'start' });
+  teammate.tray = ['carrot', 'wool'];
+  host.gauge = 2;
+  action(room, host, { type: 'alpaca', tileId: host.board.find(tile => exposed(tile, host.board)).id });
+  assert.deepEqual(teammate.tray, []);
+  assert.equal(host.gauge, 0);
+  assert.ok(publicState(room, teammate).alpacaAt);
+});
+
 test('four players can play, trade, and undo exactly', () => {
   const room = newRoom('Host');
   room.code = 'ABC234';
