@@ -3,16 +3,14 @@ const assert = require('node:assert/strict');
 const { createBoard, exposed, newRoom, makePlayer, action, publicState } = require('../game');
 
 test('both rounds contain exact triples and layered covered tiles', () => {
-  for (const [stage, size, kinds] of [['easy', 18, 3], ['hard', 78, 13]]) {
+  for (const [stage, size, kinds] of [['easy', 18, 3], ['hard', 117, 13]]) {
     const board = createBoard(stage, 12345);
     assert.equal(board.length, size);
     const counts = Object.groupBy(board, tile => tile.type);
     assert.equal(Object.keys(counts).length, kinds);
-    for (const cards of Object.values(counts)) assert.equal(cards.length, 6);
-    if (stage === 'hard') {
-      assert(board.some(tile => !exposed(tile, board)));
-      assert(board.some(tile => exposed(tile, board)));
-    }
+    for (const cards of Object.values(counts)) assert.equal(cards.length, size / kinds);
+    assert(board.some(tile => !exposed(tile, board)));
+    assert(board.some(tile => exposed(tile, board)));
   }
 });
 

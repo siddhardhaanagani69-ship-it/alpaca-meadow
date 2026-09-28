@@ -1,6 +1,6 @@
 const ICONS = {
   carrot: '🥕', wool: '☁️', cheese: '🧀', skewer: '🍡', cutlery: '🍴',
-  peas: '🫛', sprout: '🌱', gloves: '🧤', hat: '🎩', yarn: '🧶',
+  peas: '🫛', sprout: '🌱', gloves: '🧤', hat: '🧢', yarn: '🧶',
   socks: '🧦', corner: '📐', jewel: '💎',
 };
 const TOOL_INFO = {
@@ -106,7 +106,7 @@ function renderPlayers() {
   for (let index = 0; index < 4; index++) {
     const player = state.players[index];
     const self = player?.id === state.self.id;
-    if (playing && self) continue;
+    if (state.stage !== 'lobby' && self) continue;
     const sending = playing && player && selectedTrayIndex !== null;
     const card = make(sending ? 'button' : 'div', `player-card${!player ? ' empty' : ''}${self ? ' self' : ''}${sending ? ' can-send' : ''}`);
     const badge = !player ? 'Open' : state.stage === 'lobby' ? (player.host ? 'Host' : 'Ready') : `${player.progress}%`;
@@ -147,8 +147,8 @@ function renderBoard() {
     button.type = 'button';
     button.style.left = `${100 * (tile.x - minX) / width}%`;
     button.style.top = `${100 * (tile.y - minY) / height}%`;
-    button.style.width = `${100 * 124 / width}%`;
-    button.style.height = `${100 * 124 / height}%`;
+    button.style.width = `${100 * 116 / width}%`;
+    button.style.height = `${100 * 116 / height}%`;
     button.style.setProperty('--layer', tile.layer + 1);
     button.setAttribute('aria-label', `${tile.type} tile${covered ? ', covered' : ', playable'}`);
     button.title = `${tile.type}${covered ? ' · covered' : ''}`;
@@ -162,7 +162,7 @@ function renderBoard() {
     board.append(button);
   }
   const remaining = state.self.board.filter(tile => !tile.removed).length;
-  $('board-hint').textContent = armed === 'free' ? 'Tap a gray tile to use Free Choice.' : armed === 'hammer' ? 'Tap a bright tile to erase it with the Hammer.' : armed === 'alpaca' ? 'Tap a bright tile to call the alpaca and clear every tray.' : remaining ? 'Tap bright tiles. Gray tiles are covered by another layer.' : 'Your board is clear!';
+  $('board-hint').textContent = armed === 'free' ? 'Tap a gray tile to use Free Choice.' : armed === 'hammer' ? 'Tap a bright tile to erase it with the Hammer.' : armed === 'alpaca' ? 'Tap a bright tile to call the alpaca and clear every tray.' : remaining ? '' : 'Your board is clear!';
 }
 
 function renderTray() {
@@ -184,12 +184,11 @@ function renderTray() {
   for (let slot = state.self.tray.length; slot < 7; slot++) tray.append(make('span', 'tray-slot'));
   $('tray-count').textContent = `${state.self.tray.length} / 7`;
   $('sos').classList.toggle('hidden', state.self.tray.length < 7);
-  $('tray-hint').textContent = selectedTrayIndex === null ? 'Select a tray tile, then tap a teammate or an empty crate.' : `Selected ${ICONS[state.self.tray[selectedTrayIndex]]} ${state.self.tray[selectedTrayIndex]}. Tap a teammate to send it or an empty crate to store it.`;
+  $('tray-hint').textContent = selectedTrayIndex === null ? '' : `Selected ${ICONS[state.self.tray[selectedTrayIndex]]} ${state.self.tray[selectedTrayIndex]}. Tap a teammate to send it or an empty crate to store it.`;
   $('gauge-fill').style.width = `${state.self.gauge * 50}%`;
   $('gauge-count').textContent = `${state.self.gauge} / 2`;
-  $('alpaca-button').disabled = state.self.gauge < 2;
-  $('alpaca-button').classList.toggle('active', state.self.gauge >= 2);
-  $('alpaca-button').textContent = armed === 'alpaca' ? '🦙 Choose a bright tile above · tap again to cancel' : '🦙 Call the alpaca · clear every tray';
+  $('alpaca-button').classList.toggle('hidden', state.self.gauge < 2);
+  $('alpaca-button').textContent = armed === 'alpaca' ? '🦙 Choose a bright tile · tap to cancel' : '🦙 Call the alpaca · clear every tray';
 }
 
 function renderTools() {
@@ -250,16 +249,17 @@ function render(next) {
   const lobby = state.stage === 'lobby';
   const won = state.stage === 'won';
   $('lobby').classList.toggle('hidden', !lobby);
-  $('play').classList.toggle('hidden', lobby || won);
+  $('play').classList.toggle('hidden', lobby);
+  document.body.classList.toggle('in-game', !lobby);
   $('victory').classList.toggle('hidden', !won);
-  $('order-panel').classList.toggle('hidden', lobby || won);
+  $('order-panel').classList.toggle('hidden', lobby);
   if (lobby) {
     const open = 4 - state.players.length;
-    $('lobby-message').textContent = open ? `Play solo or share the link with up to ${open} more friend${open === 1 ? '' : 's'}. The host can start any time.` : 'All four alpacas are here. Your team is ready!';
+    $('lobby-message').textContent = open ? `Play solo or invite up to ${open} more friend${open === 1 ? '' : 's'}. The host can start any time.` : 'All four alpacas are here. Your team is ready!';
     $('start-button').classList.toggle('hidden', !state.players.some(player => player.id === state.self.id && player.host));
   } else if (won) {
     const winner = state.players.find(player => player.id === state.winnerId);
-    $('victory-message').textContent = `${winner?.name || 'Your team'} cleared the hard round in ${formatTime((state.finishedAt - state.startedAt) / 1000)}. Every alpaca gets the win!`;
+    $('victory-message').textContent = `${winner?.name || 'Your team'} cleared the meadow. Time the team took: ${formatTime((state.finishedAt - state.startedAt) / 1000)}`;
     $('play-again').classList.toggle('hidden', !state.players.some(player => player.id === state.self.id && player.host));
   } else {
     const hard = state.stage === 'hard';

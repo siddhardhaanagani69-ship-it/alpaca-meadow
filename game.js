@@ -36,11 +36,19 @@ function positions(stage) {
       }
     }
   };
-  if (stage === 'easy') add(6, 3, 170, 310, 0);
-  else {
-    add(8, 6, 20, 160, 0);
-    add(6, 4, 100, 250, 1);
-    add(3, 2, 340, 400, 2);
+  // each layer sits half a tile off the one below, like the real game
+  if (stage === 'easy') {
+    add(4, 3, 0, 0, 0);
+    add(3, 2, 60, 60, 1);
+  } else {
+    add(7, 8, 0, 0, 0);
+    add(6, 7, 60, 60, 1);
+    add(3, 1, 240, 420, 2);
+    // two side piles under the grid: only the top card of each is playable
+    for (let i = 0; i < 8; i++) {
+      tiles.push({ id: tiles.length, x: i * 14, y: 1010, layer: 3 + i });
+      tiles.push({ id: tiles.length, x: 720 - i * 14, y: 1010, layer: 3 + i });
+    }
   }
   return tiles;
 }
@@ -66,7 +74,8 @@ function createBoard(stage, seed) {
     remaining.delete(chosen.id);
   }
   const types = stage === 'easy' ? EASY_TYPES : HARD_TYPES;
-  const triples = shuffle(types.flatMap(type => [type, type]), random);
+  const perType = board.length / 3 / types.length;
+  const triples = shuffle(types.flatMap(type => Array(perType).fill(type)), random);
   board.forEach(tile => { tile.removed = false; });
   order.forEach((id, index) => { board[id].type = triples[Math.floor(index / 3)]; });
   return board;
