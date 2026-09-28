@@ -11,6 +11,36 @@ const TOOL_INFO = {
   mix: ['🔀', 'Mix', 'Shuffle the remaining board'],
 };
 const $ = id => document.getElementById(id);
+// Hand-drawn tile art: chunky fills with a dark outline, in the style of the real game.
+const ART = {
+  carrot: '<path d="M12 54C20 40 30 28 38 22c6-4 12 0 10 6-4 8-20 18-36 26z" fill="#f58b2a"/><path d="M27 38l5 3M34 31l4 3" fill="none"/><path d="M44 22c0-9 5-14 8-16 0 6-2 12-6 16zM47 25c5-6 10-7 13-7-2 6-7 8-12 8z" fill="#5bbf3a"/>',
+  wool: '<path d="M18 48a9 9 0 0 1-3-17 10 10 0 0 1 13-13 11 11 0 0 1 19 2 9 9 0 0 1 5 16 8 8 0 0 1-9 12z" fill="#fff"/><path d="M24 32q5-4 9 0M33 40q5-4 9 0M38 27q4-3 7 0" fill="none" stroke="#b9c4cc"/>',
+  cheese: '<path d="M8 34L44 14l12 20z" fill="#ffe07a"/><path d="M8 34h48v16H8z" fill="#ffc934"/><g fill="#e3a01b" stroke="none"><circle cx="20" cy="42" r="3.5"/><circle cx="38" cy="44" r="2.8"/><circle cx="48" cy="39" r="2.2"/><circle cx="38" cy="27" r="3"/></g>',
+  skewer: '<path d="M10 56L54 10" fill="none" stroke-width="4" stroke="#9b6a3c"/><path d="M10 56L54 10" fill="none" stroke-width="1.5" stroke="#d9a66b"/><circle cx="20" cy="44" r="8" fill="#c65a2e"/><circle cx="31" cy="33" r="7" fill="#7cc243"/><circle cx="42" cy="22" r="8" fill="#c65a2e"/>',
+  cutlery: '<path d="M16 8v12M22 8v12M28 8v12M16 20q0 8 6 8t6-8" fill="none"/><rect x="19" y="27" width="6" height="29" rx="3" fill="#c9d3dc"/><path d="M40 8c10 4 10 18 7 24h-7z" fill="#e6ecf1"/><rect x="39" y="31" width="8" height="25" rx="3" fill="#8e9aa6"/>',
+  peas: '<path d="M8 36c8-16 36-20 48-10-8 16-36 20-48 10z" fill="#6cc04a"/><g fill="#a5e678"><circle cx="21" cy="34" r="5.5"/><circle cx="32" cy="31" r="5.5"/><circle cx="43" cy="29" r="5.5"/></g><path d="M56 26c2-4 4-6 6-6" fill="none"/>',
+  sprout: '<path d="M16 54q16-8 32 0z" fill="#9b6a3c"/><path d="M32 52V30" fill="none" stroke-width="4" stroke="#3f8f28"/><path d="M32 32c-12 0-20-8-20-18 12 0 20 6 20 18zM32 30c2-12 12-18 22-16 0 12-10 18-22 16z" fill="#62c23f"/>',
+  gloves: '<path d="M20 50V28c0-12 6-18 14-18s12 6 12 16v8l6-6c4-4 8 2 4 6L46 46v4z" fill="#e24b4b"/><rect x="17" y="46" width="32" height="11" rx="3" fill="#fff"/><path d="M24 51h18" fill="none" stroke="#e7b3b3"/>',
+  hat: '<circle cx="32" cy="12" r="6" fill="#fff"/><path d="M12 42c0-20 10-28 20-28s20 8 20 28z" fill="#3d8be0"/><path d="M24 20v20M32 18v22M40 20v20" fill="none" stroke="#2a6fc0"/><rect x="9" y="40" width="46" height="13" rx="6" fill="#2a6fc0"/>',
+  yarn: '<circle cx="31" cy="32" r="20" fill="#e9573f"/><path d="M14 26c10-4 24-2 34 8M13 37c12-6 26-2 34 10M23 14c7 10 9 24 5 36" fill="none" stroke="#a8321f" stroke-width="2.5"/><path d="M46 46q8 6 14 2" fill="none"/>',
+  socks: '<path d="M22 8h16v26l12 8c6 4 4 14-4 14l-18-4c-8-2-8-8-6-12z" fill="#f4f7fb"/><rect x="22" y="8" width="16" height="9" fill="#3d8be0"/><path d="M22 22h16" fill="none" stroke="#3d8be0" stroke-width="3"/><path d="M44 46c4 0 7 3 6 8" fill="none" stroke="#3d8be0" stroke-width="3"/>',
+  corner: '<path d="M10 54V10l44 44z" fill="#8fc3ea"/><path d="M18 45V30l15 15z" fill="#fffff4"/><path d="M10 20h5M10 28h5M10 36h5M10 44h5" fill="none" stroke-width="2"/>',
+  jewel: '<path d="M14 24l8-12h20l8 12-18 30z" fill="#a66be0"/><path d="M14 24l8-12h20l8 12z" fill="#c9a0f5"/><path d="M14 24h36M26 24l6 30 6-30M22 12l4 12M42 12l-4 12" fill="none" stroke-width="2"/><path d="M24 16l-3 5" fill="none" stroke="#fff" stroke-width="2.5"/>',
+};
+const TOOL_ART = {
+  remove: '<path d="M14 34v18h36V34"/><path d="M32 42V12M22 22l10-10 10 10"/>',
+  undo: '<path d="M22 22h16a12 12 0 0 1 0 24H24"/><path d="M29 14l-8 8 8 8"/>',
+  free: '<path d="M14 52l26-26"/><path d="M46 10l3 7 7 3-7 3-3 7-3-7-7-3 7-3z" fill="currentColor"/>',
+  hammer: '<path d="M18 50l20-20" stroke-width="7"/><path d="M30 14l16 16 6-6-16-16z" fill="currentColor"/>',
+  mix: '<path d="M10 22h12c12 0 12 20 24 20h8M10 42h12c6 0 8-4 10-8M36 28c2-4 4-6 10-6h8M48 16l6 6-6 6M48 36l6 6-6 6"/>',
+};
+function art(type, tool = false) {
+  const span = make('span', tool ? 'tool-icon' : 'icon');
+  span.innerHTML = tool
+    ? `<svg viewBox="0 0 64 64" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">${TOOL_ART[type]}</svg>`
+    : `<svg viewBox="0 0 64 64" aria-hidden="true" stroke="#3b2a1f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">${ART[type] || ''}</svg>`;
+  return span;
+}
 const params = new URLSearchParams(location.search);
 const roomCode = params.get('room')?.toUpperCase() || '';
 let token = roomCode ? localStorage.getItem(`alpaca:${roomCode}`) : null;
@@ -140,6 +170,7 @@ function renderBoard() {
   const minX = Math.min(...all.map(tile => tile.x)), minY = Math.min(...all.map(tile => tile.y));
   const width = Math.max(...all.map(tile => tile.x)) + 124 - minX, height = Math.max(...all.map(tile => tile.y)) + 124 - minY;
   board.style.aspectRatio = `${width} / ${height}`;
+  board.style.width = `${Math.min(100, 100 * width / 844)}%`;
   for (const tile of state.self.board) {
     if (tile.removed) continue;
     const covered = state.self.board.some(other => !other.removed && other.layer > tile.layer && tile.x < other.x + 124 && tile.x + 124 > other.x && tile.y < other.y + 124 && tile.y + 124 > other.y);
@@ -152,7 +183,7 @@ function renderBoard() {
     button.style.setProperty('--layer', tile.layer + 1);
     button.setAttribute('aria-label', `${tile.type} tile${covered ? ', covered' : ', playable'}`);
     button.title = `${tile.type}${covered ? ' · covered' : ''}`;
-    button.append(make('span', 'icon', ICONS[tile.type] || '•'));
+    button.append(art(tile.type));
     button.disabled = covered && armed !== 'free';
     button.addEventListener('click', () => {
       if (armed === 'hammer') return send({ type: 'hammer', tileId: tile.id });
@@ -169,7 +200,8 @@ function renderTray() {
   const tray = $('tray');
   tray.replaceChildren();
   state.self.tray.forEach((type, index) => {
-    const button = make('button', `tray-tile${type === 'jewel' ? ' jewel' : ''}${selectedTrayIndex === index ? ' selected' : ''}`, ICONS[type]);
+    const button = make('button', `tray-tile${type === 'jewel' ? ' jewel' : ''}${selectedTrayIndex === index ? ' selected' : ''}`);
+    button.append(art(type));
     button.type = 'button';
     button.title = type;
     button.setAttribute('aria-label', `${type} in tray, select to store or send`);
@@ -194,14 +226,14 @@ function renderTray() {
 function renderTools() {
   const container = $('tools');
   container.replaceChildren();
-  for (const [type, [icon, label, title]] of Object.entries(TOOL_INFO)) {
+  for (const [type, [, label, title]] of Object.entries(TOOL_INFO)) {
     const count = state.self.tools[type];
     const button = make('button', `tool${count ? ' available' : ''}${armed === type ? ' armed' : ''}`);
     button.type = 'button';
     button.disabled = count < 1 || (type === 'undo' && !state.self.canUndo);
     button.title = title;
     button.setAttribute('aria-label', `${label}, ${count} available. ${title}`);
-    button.append(make('span', 'tool-icon', icon), make('span', 'tool-count', String(count)), make('span', 'tool-label', label));
+    button.append(art(type, true), make('span', 'tool-count', String(count)), make('span', 'tool-label', label));
     button.addEventListener('click', () => {
       if (type === 'free' || type === 'hammer') {
         armed = armed === type ? null : type;
@@ -218,7 +250,8 @@ function renderWarehouse() {
   container.replaceChildren();
   for (let slot = 0; slot < 6; slot++) {
     const card = state.warehouse[slot];
-    const button = make('button', `crate${card ? ' full' : ''}`, card ? ICONS[card.type] : '');
+    const button = make('button', `crate${card ? ' full' : ''}`);
+    if (card) button.append(art(card.type));
     button.type = 'button';
     if (card) {
       button.title = `${card.type} from ${card.from} · tap to take`;
@@ -269,7 +302,7 @@ function render(next) {
     $('progress-label').textContent = `${self.progress}% cleared`;
     $('progress-fill').style.width = `${self.progress}%`;
     const order = state.self.order;
-    $('order-icon').textContent = ICONS[order.type];
+    $('order-icon').replaceChildren(art(order.type));
     $('order-panel').setAttribute('aria-label', `Order: collect ${order.goal} ${order.type}, ${order.count} done. Finish it for a free tool.`);
     $('order-goal').textContent = `×${order.goal}`;
     $('order-fill').style.width = `${100 * order.count / order.goal}%`;

@@ -187,17 +187,19 @@ body.in-game .menu { display: block; }
 .progress-track > div { height: 100%; width: 0; background: #45b14b; transition: width .25s; }
 
 /* board */
-.board { width: 100%; position: relative; margin: 6px 0; }
+.board { width: 100%; position: relative; margin: 6px auto; }
+.icon, .tool-icon { display: grid; place-items: center; pointer-events: none; }
+.icon svg, .tool-icon svg { width: 100%; height: 100%; overflow: visible; }
 .tile {
   position: absolute; padding: 0; display: grid; place-items: center; z-index: var(--layer);
   background: linear-gradient(#fff, var(--tile-face)); border: 1.5px solid #9dcc6a; border-radius: 12%;
   box-shadow: 0 4px 0 var(--tile-edge); touch-action: manipulation; transition: transform .12s;
 }
-.tile .icon { font-size: clamp(15px, 5.6vw, 30px); line-height: 1; }
+.tile .icon { width: 80%; height: 80%; }
 .tile.exposed:hover, .tile.exposed:focus-visible { transform: translateY(-3px); }
 .tile:disabled { opacity: 1; }
 .tile.covered { background: #6c756d; border-color: #545c55; box-shadow: 0 4px 0 #454c46; cursor: default; }
-.tile.covered .icon { filter: grayscale(1) brightness(.4); opacity: .7; }
+.tile.covered .icon { filter: grayscale(1) brightness(.35); opacity: .6; }
 .tile.free-target { cursor: pointer; background: #a58bc9; border-color: #7c5bb0; box-shadow: 0 4px 0 #6a4b9c; }
 .tile.jewel:not(.covered) { background: linear-gradient(#fff, #efe2ff); border-color: #a888d6; box-shadow: 0 4px 0 #8a66c0; }
 .hint { text-align: center; color: #2f4d17; font-size: 12px; font-weight: 800; margin: 8px 0 0; }
@@ -232,10 +234,13 @@ body.in-game .menu { display: block; }
 .tray { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
 .tray-slot { aspect-ratio: 1; border-radius: 7px; background: #00000018; }
 .tray-tile {
-  aspect-ratio: 1; padding: 0; display: grid; place-items: center; font-size: clamp(18px, 6vw, 28px);
+  aspect-ratio: 1; padding: 0; display: grid; place-items: center;
   background: linear-gradient(#fff, var(--tile-face)); border: 1.5px solid #9dcc6a; border-radius: 8px; box-shadow: 0 3px 0 var(--tile-edge);
   transition: transform .12s;
 }
+.tray-tile .icon { width: 80%; height: 80%; }
+.crate .icon { width: 86%; height: 86%; }
+#order-icon { display: grid; width: 28px; height: 28px; }
 .tray-tile.jewel { background: linear-gradient(#fff, #efe2ff); border-color: #a888d6; box-shadow: 0 3px 0 #8a66c0; }
 .tray-tile.selected { transform: translateY(-6px); outline: 3px solid var(--purple); outline-offset: 1px; }
 .gauge-track { margin-top: 6px; height: 6px; border-radius: 99px; background: #5a3213; overflow: hidden; }
@@ -250,7 +255,7 @@ body.in-game .menu { display: block; }
 }
 .tool:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
 .tool.armed { background: #c9a6f2; box-shadow: 0 0 0 3px #fff, 0 4px 0 var(--ink); }
-.tool-icon { font-size: 23px; }
+.tool-icon { width: 34px; height: 34px; color: var(--ink); }
 .tool-count {
   position: absolute; top: -9px; right: -9px; min-width: 21px; height: 21px; padding: 0 4px; display: grid; place-items: center;
   background: var(--ink); color: #fff; border: 2px solid #fff; border-radius: 11px; font-size: 11px; font-weight: 900;
@@ -317,7 +322,7 @@ body.in-game .menu { display: block; }
   .player-avatar { width: 38px; height: 38px; font-size: 19px; }
   .toolbar { gap: 7px; }
   .tool { width: 42px; height: 42px; }
-  .tool-icon { font-size: 20px; }
+  .tool-icon { width: 28px; height: 28px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
