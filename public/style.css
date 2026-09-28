@@ -113,7 +113,12 @@ footer { text-align: center; padding: 24px 0 32px; color: #3f6a1f; font-size: 12
 
 /* full-screen game: drop the website chrome once play starts */
 body.in-game .site-header, body.in-game footer, body.in-game .room-bar { display: none; }
-body.in-game main { padding-top: 10px; }
+/* the game fills exactly one screen: HUD on top, tray and tools pinned at the bottom, board fits between */
+body.in-game { height: 100dvh; overflow: hidden; }
+body.in-game main { height: 100dvh; display: flex; flex-direction: column; padding: max(8px, env(safe-area-inset-top)) 0 max(6px, env(safe-area-inset-bottom)); }
+body.in-game .room-shell { flex: 1; min-height: 0; width: 100%; margin: 0 auto; display: flex; flex-direction: column; }
+body.in-game .play-layout { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.board-area { flex: 1; min-height: 0; container-type: size; display: grid; place-items: center; position: relative; }
 body.in-game::before { height: 104px; }
 
 /* top HUD: menu, teammates, order sign */
@@ -187,7 +192,7 @@ body.in-game .menu { display: block; }
 .progress-track > div { height: 100%; width: 0; background: #45b14b; transition: width .25s; }
 
 /* board */
-.board { width: 100%; position: relative; margin: 6px auto; }
+.board { position: relative; width: min(calc(100cqw * var(--scale, 1)), calc(100cqh * var(--ratio, 1))); }
 .icon, .tool-icon { display: grid; place-items: center; pointer-events: none; }
 .icon svg, .tool-icon svg { width: 100%; height: 100%; overflow: visible; }
 .tile {
@@ -202,21 +207,23 @@ body.in-game .menu { display: block; }
 .tile.covered .icon { filter: grayscale(1) brightness(.35); opacity: .6; }
 .tile.free-target { cursor: pointer; background: #a58bc9; border-color: #7c5bb0; box-shadow: 0 4px 0 #6a4b9c; }
 .tile.jewel:not(.covered) { background: linear-gradient(#fff, #efe2ff); border-color: #a888d6; box-shadow: 0 4px 0 #8a66c0; }
-.hint { text-align: center; color: #2f4d17; font-size: 12px; font-weight: 800; margin: 8px 0 0; }
+.hints { position: absolute; left: 0; right: 0; bottom: 6px; display: grid; justify-items: center; gap: 4px; pointer-events: none; z-index: 25; }
+.hint { max-width: 92%; margin: 0; padding: 5px 12px; text-align: center; font-size: 12px; font-weight: 800; background: var(--paper); border: 2px solid var(--ink); border-radius: 10px; box-shadow: 0 3px 0 #0002; }
 .hint:empty { display: none; }
 
 /* tray area */
-.tray-area { margin-top: 10px; }
-.tray-top { display: flex; justify-content: space-between; align-items: end; gap: 10px; margin-bottom: 8px; min-height: 20px; }
+.tray-area { flex: none; margin-top: 6px; }
+.tray-top { display: flex; justify-content: space-between; align-items: end; gap: 10px; margin-bottom: 8px; }
+.tray-status { display: grid; justify-items: start; gap: 6px; }
 .sos { color: #fff; background: #d8452f; border: 2px solid var(--ink); font-size: 12px; font-weight: 900; padding: 1px 9px; border-radius: 8px; animation: pulse 1.2s infinite; }
 .warehouse-box { display: grid; justify-items: center; gap: 1px; margin-left: auto; }
 .warehouse-label { font-size: 12px; font-weight: 900; text-shadow: 0 0 3px #fff, 0 0 3px #fff; }
 .crates {
-  display: grid; grid-template-columns: repeat(3, 32px); gap: 4px; padding: 5px;
+  display: grid; grid-template-columns: repeat(3, 30px); gap: 3px; padding: 4px;
   background: #4a78d6; border: 3px solid #24479a; border-radius: 9px; box-shadow: 0 3px 0 #1d3a80;
 }
 .crate {
-  height: 30px; padding: 0; display: grid; place-items: center; font-size: 18px;
+  height: 26px; padding: 0; display: grid; place-items: center;
   border: 2px solid #5a3213; border-radius: 4px; background: repeating-linear-gradient(#b27640 0 6px, #8a5a2f 6px 8px);
 }
 .crate:disabled { opacity: 1; cursor: default; }
@@ -245,10 +252,10 @@ body.in-game .menu { display: block; }
 .tray-tile.selected { transform: translateY(-6px); outline: 3px solid var(--purple); outline-offset: 1px; }
 .gauge-track { margin-top: 6px; height: 6px; border-radius: 99px; background: #5a3213; overflow: hidden; }
 .gauge-track > div { height: 100%; width: 0; background: linear-gradient(90deg, #c7a2f4, #8a5cd0); transition: width .25s; }
-.alpaca-button { margin-top: 12px; width: 100%; min-height: 44px; border: 3px solid var(--ink); border-radius: 12px; background: #b58ce8; color: #fff; font-weight: 900; box-shadow: 0 4px 0 var(--ink); animation: pulse 1.6s infinite; }
+.alpaca-button { padding: 6px 12px; min-height: 38px; font-size: 13px; border: 3px solid var(--ink); border-radius: 12px; background: #b58ce8; color: #fff; font-weight: 900; box-shadow: 0 4px 0 var(--ink); animation: pulse 1.6s infinite; }
 
 /* bottom toolbar */
-.toolbar { display: flex; justify-content: center; gap: 12px; padding: 18px 0 26px; }
+.toolbar { flex: none; display: flex; justify-content: center; gap: 12px; padding: 14px 0 16px; }
 .tool {
   position: relative; width: 50px; height: 50px; padding: 0; display: grid; place-items: center;
   background: var(--yellow); border: 2.5px solid var(--ink); border-radius: 10px; box-shadow: 0 4px 0 var(--ink);
@@ -311,10 +318,8 @@ body.in-game .menu { display: block; }
   .order-item { font-size: 22px; }
   .tile { box-shadow: 0 3px 0 var(--tile-edge), 0 5px 4px #2f5a1540; }
   .tile.covered { box-shadow: 0 3px 0 #4f554f; }
-  .crates { grid-template-columns: repeat(3, 30px); }
-  .crate { height: 30px; font-size: 18px; }
   .toolbar { gap: 10px; }
-  .tool { width: 48px; height: 48px; }
+  .tool { width: 46px; height: 46px; }
 }
 @media (max-width: 350px) {
   .brand { font-size: 16px; }

@@ -170,7 +170,9 @@ function renderBoard() {
   const minX = Math.min(...all.map(tile => tile.x)), minY = Math.min(...all.map(tile => tile.y));
   const width = Math.max(...all.map(tile => tile.x)) + 124 - minX, height = Math.max(...all.map(tile => tile.y)) + 124 - minY;
   board.style.aspectRatio = `${width} / ${height}`;
-  board.style.width = `${Math.min(100, 100 * width / 844)}%`;
+  // the board shrinks to fit the screen; --scale keeps warm-up tiles the same size as hard-round tiles
+  board.style.setProperty('--ratio', width / height);
+  board.style.setProperty('--scale', Math.min(1, width / 844));
   for (const tile of state.self.board) {
     if (tile.removed) continue;
     const covered = state.self.board.some(other => !other.removed && other.layer > tile.layer && tile.x < other.x + 124 && tile.x + 124 > other.x && tile.y < other.y + 124 && tile.y + 124 > other.y);
@@ -220,7 +222,7 @@ function renderTray() {
   $('gauge-fill').style.width = `${state.self.gauge * 50}%`;
   $('gauge-count').textContent = `${state.self.gauge} / 2`;
   $('alpaca-button').classList.toggle('hidden', state.self.gauge < 2);
-  $('alpaca-button').textContent = armed === 'alpaca' ? '🦙 Choose a bright tile · tap to cancel' : '🦙 Call the alpaca · clear every tray';
+  $('alpaca-button').textContent = armed === 'alpaca' ? '🦙 Pick a bright tile · tap to cancel' : '🦙 Call the alpaca';
 }
 
 function renderTools() {

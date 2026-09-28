@@ -88,11 +88,13 @@
       </div>
 
       <div id="play" class="play-layout hidden">
-        <div id="board" class="board" aria-label="Layered tile board"></div>
-        <p id="board-hint" class="hint"></p>
+        <div class="board-area">
+          <div id="board" class="board" aria-label="Layered tile board"></div>
+          <div class="hints" aria-live="polite"><p id="board-hint" class="hint"></p><p id="tray-hint" class="hint"></p></div>
+        </div>
         <div class="tray-area">
           <div class="tray-top">
-            <span id="sos" class="sos hidden">SOS</span>
+            <div class="tray-status"><span id="sos" class="sos hidden">SOS</span><button id="alpaca-button" class="alpaca-button hidden" type="button">🦙 Call the alpaca</button></div>
             <div class="warehouse-box"><span class="warehouse-label">Warehouse</span><div id="warehouse" class="crates" aria-label="Team warehouse"></div></div>
           </div>
           <div class="tray-frame">
@@ -100,8 +102,6 @@
             <div class="gauge-track" aria-label="Alpaca power"><div id="gauge-fill"></div></div>
           </div>
           <span id="tray-count" class="sr-only">0 / 7</span><span id="gauge-count" class="sr-only">0 / 2</span>
-          <button id="alpaca-button" class="alpaca-button hidden" type="button">🦙 Call the alpaca</button>
-          <p id="tray-hint" class="hint"></p>
         </div>
         <div id="tools" class="toolbar" aria-label="Tools"></div>
       </div>
