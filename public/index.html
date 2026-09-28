@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#f7eacb">
+  <meta name="theme-color" content="#bfe8f7">
   <meta name="description" content="A four-player cooperative tile matching game. Invite your herd and clear the meadow together.">
   <title>Alpaca Meadow · Four-player co-op</title>
   <link rel="stylesheet" href="/style.css">
@@ -55,9 +55,17 @@
         <button id="copy-link" class="outline-button" type="button">Copy invite link ↗</button>
       </div>
       <p id="invite-url" class="invite-url"></p>
-      <div id="players" class="players" aria-label="Players"></div>
+      <div class="hud">
+        <div id="players" class="players" aria-label="Players"></div>
+        <div id="order-panel" class="order-sign hidden" title="Finish the order for a free tool">
+          <b>Order Bar</b>
+          <div class="order-item"><span id="order-icon"></span><span id="order-goal">×3</span></div>
+          <div class="order-track"><div id="order-fill"></div></div>
+          <span id="order-progress" class="order-count">0 / 3</span>
+        </div>
+      </div>
       <div id="lobby" class="lobby-panel hidden">
-        <div class="lobby-flower" aria-hidden="true">✿</div>
+        <div class="lobby-flower" aria-hidden="true">🦙</div>
         <h2>Gather your herd</h2>
         <p id="lobby-message">Share the link with three friends. The host can start when all four arrive.</p>
         <button id="start-button" class="primary-button" type="button">Start the warm-up <span aria-hidden="true">→</span></button>
@@ -65,33 +73,32 @@
       </div>
 
       <div id="play" class="play-layout hidden">
-        <div class="main-column">
-          <div class="round-heading">
-            <div><p id="stage-kicker" class="eyebrow">ROUND 1 OF 2 · WARM-UP</p><h2 id="stage-title">A gentle start</h2></div>
-            <div id="timer" class="timer" aria-label="Elapsed time">00:00</div>
-          </div>
-          <div class="progress-line"><span id="progress-label">0% cleared</span><div class="progress-track"><div id="progress-fill"></div></div></div>
-          <div class="board-frame"><div id="board" class="board" aria-label="Layered tile board"></div></div>
-          <p id="board-hint" class="board-hint">Tap bright tiles. Dimmed tiles are covered by another layer.</p>
-
-          <div class="order-panel"><div><p class="eyebrow">A LITTLE ORDER</p><strong id="order-title">Collect tiles</strong><span id="order-progress">0 / 3</span></div><span class="order-reward">Finish it for a free tool 🎁</span></div>
-
-          <div class="tray-panel">
-            <div class="section-heading"><h3>Your tray <span id="tray-count">0 / 7</span></h3><span id="sos" class="sos hidden">SOS · NEED HELP</span></div>
-            <div id="tray" class="tray" aria-label="Your selected tiles"></div>
-            <div class="gauge-row"><span>💎 Alpaca power</span><div class="gauge-track"><div id="gauge-fill"></div></div><span id="gauge-count">0 / 2</span></div>
-            <button id="alpaca-button" class="alpaca-button" type="button" disabled>🦙 Call the alpaca · clear every tray</button>
-            <p id="tray-hint" class="small-note">Select a tray tile to store it or send it to a teammate.</p>
-          </div>
-
-          <div class="tools-panel"><div class="section-heading"><h3>Helpful little tools</h3></div><div id="tools" class="tools"></div></div>
+        <div class="round-heading">
+          <div><p id="stage-kicker" class="eyebrow">ROUND 1 OF 2 · WARM-UP</p><h2 id="stage-title">A gentle start</h2></div>
+          <div id="timer" class="timer" aria-label="Elapsed time">00:00</div>
         </div>
-        <aside class="team-column">
-          <section class="aside-card"><div class="section-heading"><h3>Team warehouse</h3><span id="warehouse-count">0 / 6</span></div><p class="small-note">Store a tile for anyone to take. Tap a card to move it to your tray.</p><div id="warehouse" class="warehouse"></div><button id="store-button" class="outline-button compact" type="button" disabled>Store selected tile</button></section>
-          <section class="aside-card"><div class="section-heading"><h3>Ask the herd</h3></div><p class="small-note">Show your teammates which card you need next.</p><label class="sr-only" for="request-kind">Requested tile</label><select id="request-kind"><option value="">No request</option></select></section>
-          <section class="aside-card"><div class="section-heading"><h3>Meadow chatter</h3></div><ul id="feed" class="feed" aria-live="polite"></ul></section>
-          <button id="restart-button" class="text-button hidden" type="button">Restart with this herd</button>
-        </aside>
+        <div class="progress-line"><span id="progress-label">0% cleared</span><div class="progress-track"><div id="progress-fill"></div></div></div>
+        <div id="board" class="board" aria-label="Layered tile board"></div>
+        <p id="board-hint" class="board-hint">Tap bright tiles. Gray tiles are covered by another layer.</p>
+
+        <div class="tray-area">
+          <div class="tray-top">
+            <div class="tray-label"><h3>Your tray <span id="tray-count">0 / 7</span></h3><span id="sos" class="sos hidden">SOS</span></div>
+            <div class="warehouse-box"><span class="warehouse-label">Warehouse</span><div id="warehouse" class="crates" aria-label="Team warehouse"></div></div>
+          </div>
+          <div id="tray" class="tray" aria-label="Your selected tiles"></div>
+          <div class="gauge-row"><span>💎 Alpaca</span><div class="gauge-track"><div id="gauge-fill"></div></div><span id="gauge-count">0 / 2</span></div>
+          <button id="alpaca-button" class="alpaca-button" type="button" disabled>🦙 Call the alpaca · clear every tray</button>
+          <p id="tray-hint" class="tray-hint">Select a tray tile, then tap a teammate or an empty crate.</p>
+        </div>
+
+        <div id="tools" class="toolbar" aria-label="Tools"></div>
+
+        <div class="team-extras">
+          <section class="aside-card"><h3>Ask the herd</h3><label class="sr-only" for="request-kind">Requested tile</label><select id="request-kind"><option value="">No request</option></select></section>
+          <section class="aside-card"><h3>Meadow chatter</h3><ul id="feed" class="feed" aria-live="polite"></ul></section>
+        </div>
+        <button id="restart-button" class="text-button hidden" type="button">Restart with this herd</button>
       </div>
       <div id="victory" class="victory hidden"><span class="victory-emoji" aria-hidden="true">🦙 ✨</span><p class="eyebrow">EVERYONE WINS</p><h2>The meadow is clear!</h2><p id="victory-message"></p><button id="play-again" class="primary-button" type="button">Play again ↗</button></div>
     </section>

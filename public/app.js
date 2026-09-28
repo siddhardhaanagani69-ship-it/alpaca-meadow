@@ -84,7 +84,7 @@ async function connect() {
   }
   source?.close();
   source = new EventSource(`/api/rooms/${roomCode}/events?token=${encodeURIComponent(token)}`);
-  source.onopen = () => connection('Connected to the herd');
+  source.onopen = () => connection('Connected');
   source.onerror = () => connection('Reconnecting…', true);
   source.onmessage = event => {
     try { render(JSON.parse(event.data)); }
@@ -102,30 +102,32 @@ function make(tag, className, text) {
 function renderPlayers() {
   const container = $('players');
   container.replaceChildren();
+  const playing = ['easy', 'hard'].includes(state.stage);
   for (let index = 0; index < 4; index++) {
     const player = state.players[index];
-    const card = make('div', `player-card${!player ? ' empty' : ''}${player?.id === state.self.id ? ' self' : ''}`);
-    const avatar = make('div', 'player-avatar', player ? ['🦙', '🌼', '🍀', '⭐'][index] : '＋');
+    const self = player?.id === state.self.id;
+    if (playing && self) continue;
+    const sending = playing && player && selectedTrayIndex !== null;
+    const card = make(sending ? 'button' : 'div', `player-card${!player ? ' empty' : ''}${self ? ' self' : ''}${sending ? ' can-send' : ''}`);
+    const badge = !player ? 'Open' : state.stage === 'lobby' ? (player.host ? 'Host' : 'Ready') : `${player.progress}%`;
+    card.append(make('span', 'player-badge', badge));
+    const avatar = make('span', `player-avatar${player?.sos ? ' sos' : ''}`, !player ? '＋' : player.sos ? 'SOS' : ['🦙', '🌼', '🍀', '⭐'][index]);
     avatar.setAttribute('aria-hidden', 'true');
-    card.append(avatar);
-    const info = make('div', 'player-info');
-    info.append(make('strong', '', player ? player.name : 'Waiting for friend'));
     if (player) {
-      const detail = player.host ? 'Host' : player.sos ? 'SOS · needs help' : state.stage === 'lobby' ? 'Ready to play' : `${player.progress}% cleared · ${player.trayCount}/7 tray`;
-      info.append(make('small', '', detail));
-      if (player.request) info.append(make('span', 'request-bubble', `Needs ${ICONS[player.request]} ${player.request}`));
-      card.append(info);
-      if (player.id !== state.self.id && selectedTrayIndex !== null && ['easy', 'hard'].includes(state.stage)) {
-        const button = make('button', 'send-button', `Send ${ICONS[state.self.tray[selectedTrayIndex]] || ''}`);
-        button.type = 'button';
-        button.addEventListener('click', () => send({ type: 'send', index: selectedTrayIndex, targetId: player.id }));
-        card.append(button);
-      }
       const online = make('span', `player-online${player.online ? '' : ' off'}`);
       online.title = player.online ? 'Online' : 'Offline';
-      card.append(online);
+      avatar.append(online);
     }
-    if (!player) card.append(info);
+    const name = make('span', 'player-name');
+    name.append(make('span', 'player-num', String(index + 1)), make('span', '', player ? (self ? `${player.name} (you)` : player.name) : 'Waiting…'));
+    card.append(avatar, name);
+    if (player?.request) card.append(make('span', 'request-bubble', `Needs ${ICONS[player.request]}`));
+    if (sending) {
+      card.type = 'button';
+      card.setAttribute('aria-label', `Send ${state.self.tray[selectedTrayIndex]} to ${player.name}`);
+      card.append(make('span', 'send-pill', `Send ${ICONS[state.self.tray[selectedTrayIndex]] || ''}`));
+      card.addEventListener('click', () => send({ type: 'send', index: selectedTrayIndex, targetId: player.id }));
+    }
     container.append(card);
   }
 }
@@ -133,13 +135,20 @@ function renderPlayers() {
 function renderBoard() {
   const board = $('board');
   board.replaceChildren();
+  // fit the board to the layout's bounding box so no empty band shows
+  const all = state.self.board;
+  const minX = Math.min(...all.map(tile => tile.x)), minY = Math.min(...all.map(tile => tile.y));
+  const width = Math.max(...all.map(tile => tile.x)) + 124 - minX, height = Math.max(...all.map(tile => tile.y)) + 124 - minY;
+  board.style.aspectRatio = `${width} / ${height}`;
   for (const tile of state.self.board) {
     if (tile.removed) continue;
     const covered = state.self.board.some(other => !other.removed && other.layer > tile.layer && tile.x < other.x + 124 && tile.x + 124 > other.x && tile.y < other.y + 124 && tile.y + 124 > other.y);
     const button = make('button', `tile ${covered ? 'covered' : 'exposed'} ${tile.type === 'jewel' ? 'jewel' : ''}${covered && armed === 'free' ? ' free-target' : ''}`);
     button.type = 'button';
-    button.style.left = `${tile.x / 10}%`;
-    button.style.top = `${tile.y / 10}%`;
+    button.style.left = `${100 * (tile.x - minX) / width}%`;
+    button.style.top = `${100 * (tile.y - minY) / height}%`;
+    button.style.width = `${100 * 124 / width}%`;
+    button.style.height = `${100 * 124 / height}%`;
     button.style.setProperty('--layer', tile.layer + 1);
     button.setAttribute('aria-label', `${tile.type} tile${covered ? ', covered' : ', playable'}`);
     button.title = `${tile.type}${covered ? ' · covered' : ''}`;
@@ -153,14 +162,14 @@ function renderBoard() {
     board.append(button);
   }
   const remaining = state.self.board.filter(tile => !tile.removed).length;
-  $('board-hint').textContent = armed === 'free' ? 'Tap a dimmed tile to use Free Choice.' : armed === 'hammer' ? 'Tap a bright tile to erase it with the Hammer.' : armed === 'alpaca' ? 'Tap a bright tile to call the alpaca and clear every tray.' : remaining ? 'Tap bright tiles. Dimmed tiles are covered by another layer.' : 'Your board is clear!';
+  $('board-hint').textContent = armed === 'free' ? 'Tap a gray tile to use Free Choice.' : armed === 'hammer' ? 'Tap a bright tile to erase it with the Hammer.' : armed === 'alpaca' ? 'Tap a bright tile to call the alpaca and clear every tray.' : remaining ? 'Tap bright tiles. Gray tiles are covered by another layer.' : 'Your board is clear!';
 }
 
 function renderTray() {
   const tray = $('tray');
   tray.replaceChildren();
   state.self.tray.forEach((type, index) => {
-    const button = make('button', `tray-tile${selectedTrayIndex === index ? ' selected' : ''}`, ICONS[type]);
+    const button = make('button', `tray-tile${type === 'jewel' ? ' jewel' : ''}${selectedTrayIndex === index ? ' selected' : ''}`, ICONS[type]);
     button.type = 'button';
     button.title = type;
     button.setAttribute('aria-label', `${type} in tray, select to store or send`);
@@ -168,14 +177,14 @@ function renderTray() {
       selectedTrayIndex = selectedTrayIndex === index ? null : index;
       renderTray();
       renderPlayers();
+      renderWarehouse();
     });
     tray.append(button);
   });
-  if (!state.self.tray.length) tray.append(make('span', 'tray-empty', 'Your picks land here · match three to clear'));
+  for (let slot = state.self.tray.length; slot < 7; slot++) tray.append(make('span', 'tray-slot'));
   $('tray-count').textContent = `${state.self.tray.length} / 7`;
   $('sos').classList.toggle('hidden', state.self.tray.length < 7);
-  $('tray-hint').textContent = selectedTrayIndex === null ? 'Select a tray tile to store it or send it to a teammate.' : `Selected ${ICONS[state.self.tray[selectedTrayIndex]]} ${state.self.tray[selectedTrayIndex]}. Store it or send it above.`;
-  $('store-button').disabled = selectedTrayIndex === null || state.warehouse.length >= 6;
+  $('tray-hint').textContent = selectedTrayIndex === null ? 'Select a tray tile, then tap a teammate or an empty crate.' : `Selected ${ICONS[state.self.tray[selectedTrayIndex]]} ${state.self.tray[selectedTrayIndex]}. Tap a teammate to send it or an empty crate to store it.`;
   $('gauge-fill').style.width = `${state.self.gauge * 50}%`;
   $('gauge-count').textContent = `${state.self.gauge} / 2`;
   $('alpaca-button').disabled = state.self.gauge < 2;
@@ -193,7 +202,7 @@ function renderTools() {
     button.disabled = count < 1 || (type === 'undo' && !state.self.canUndo);
     button.title = title;
     button.setAttribute('aria-label', `${label}, ${count} available. ${title}`);
-    button.append(make('span', 'tool-icon', icon), make('span', '', label), make('small', '', `×${count}`));
+    button.append(make('span', 'tool-icon', icon), make('span', 'tool-count', String(count)), make('span', 'tool-label', label));
     button.addEventListener('click', () => {
       if (type === 'free' || type === 'hammer') {
         armed = armed === type ? null : type;
@@ -208,16 +217,22 @@ function renderTools() {
 function renderWarehouse() {
   const container = $('warehouse');
   container.replaceChildren();
-  for (const card of state.warehouse) {
-    const button = make('button', 'warehouse-tile', ICONS[card.type]);
+  for (let slot = 0; slot < 6; slot++) {
+    const card = state.warehouse[slot];
+    const button = make('button', `crate${card ? ' full' : ''}`, card ? ICONS[card.type] : '');
     button.type = 'button';
-    button.title = `${card.type} from ${card.from} · tap to take`;
-    button.setAttribute('aria-label', `Take ${card.type} from the warehouse`);
-    button.addEventListener('click', () => send({ type: 'take', cardId: card.id }));
+    if (card) {
+      button.title = `${card.type} from ${card.from} · tap to take`;
+      button.setAttribute('aria-label', `Take ${card.type} from the warehouse`);
+      button.addEventListener('click', () => send({ type: 'take', cardId: card.id }));
+    } else {
+      button.disabled = selectedTrayIndex === null;
+      button.title = 'Empty crate · select a tray tile, then tap to store it';
+      button.setAttribute('aria-label', 'Store the selected tray tile in the warehouse');
+      button.addEventListener('click', () => send({ type: 'put', index: selectedTrayIndex }));
+    }
     container.append(button);
   }
-  if (!state.warehouse.length) container.append(make('span', 'warehouse-empty', 'No cards stored yet'));
-  $('warehouse-count').textContent = `${state.warehouse.length} / 6`;
 }
 
 function renderFeed() {
@@ -237,6 +252,7 @@ function render(next) {
   $('lobby').classList.toggle('hidden', !lobby);
   $('play').classList.toggle('hidden', lobby || won);
   $('victory').classList.toggle('hidden', !won);
+  $('order-panel').classList.toggle('hidden', lobby || won);
   if (lobby) {
     $('lobby-message').textContent = state.players.length === 4 ? 'All four alpacas are here. Your team is ready!' : `Share the link with ${4 - state.players.length} more friend${state.players.length === 3 ? '' : 's'}. The host can start when all four arrive.`;
     $('start-button').classList.toggle('hidden', !state.players.some(player => player.id === state.self.id && player.host));
@@ -252,8 +268,12 @@ function render(next) {
     const self = state.players.find(player => player.id === state.self.id);
     $('progress-label').textContent = `${self.progress}% cleared`;
     $('progress-fill').style.width = `${self.progress}%`;
-    $('order-title').textContent = `${ICONS[state.self.order.type]} Collect ${state.self.order.type}`;
-    $('order-progress').textContent = `${state.self.order.count} / ${state.self.order.goal}`;
+    const order = state.self.order;
+    $('order-icon').textContent = ICONS[order.type];
+    $('order-panel').setAttribute('aria-label', `Order: collect ${order.goal} ${order.type}, ${order.count} done. Finish it for a free tool.`);
+    $('order-goal').textContent = `×${order.goal}`;
+    $('order-fill').style.width = `${100 * order.count / order.goal}%`;
+    $('order-progress').textContent = `${order.count} / ${order.goal}`;
     $('restart-button').classList.toggle('hidden', !self.host);
     if (selectedTrayIndex >= state.self.tray.length) selectedTrayIndex = null;
     renderBoard();
@@ -302,7 +322,6 @@ $('copy-link').addEventListener('click', async () => {
 $('start-button').addEventListener('click', () => send({ type: 'start' }));
 $('play-again').addEventListener('click', () => send({ type: 'start' }));
 $('restart-button').addEventListener('click', () => send({ type: 'start' }));
-$('store-button').addEventListener('click', () => send({ type: 'put', index: selectedTrayIndex }));
 $('alpaca-button').addEventListener('click', () => {
   armed = armed === 'alpaca' ? null : 'alpaca';
   renderBoard();
