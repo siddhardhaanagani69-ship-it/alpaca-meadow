@@ -190,7 +190,6 @@ function checkClear(room, player) {
 
 function start(room, actor) {
   if (!actor.host) fail('Only the host can start or restart.');
-  if (room.players.length !== 4) fail('Four players are needed to start.');
   room.stage = 'easy';
   room.startedAt = Date.now();
   room.finishedAt = null;

@@ -1,6 +1,6 @@
 # Alpaca Meadow
 
-A four-player cooperative browser game inspired by the layered tile puzzle described in [the local guide](Crazy_Alpaca_WePlay_Game_Guide.md). Each friend has a board. Match three cards in a seven-card tray, finish orders to earn tools, pass cards directly or through the shared warehouse, and use jewel matches to charge a team rescue. One player clearing a round advances or wins for all four.
+A cooperative browser game for one to four players inspired by the layered tile puzzle described in [the local guide](Crazy_Alpaca_WePlay_Game_Guide.md). Each friend has a board. Match three cards in a seven-card tray, finish orders to earn tools, pass cards directly or through the shared warehouse, and use jewel matches to charge a team rescue. One player clearing a round advances or wins for the whole team. The host can start alone or with up to three friends.
 
 ## Run locally
 
@@ -10,7 +10,7 @@ Requires Node.js 20 or newer. No packages to install.
 npm start
 ```
 
-Open `http://localhost:3000`, create a room, and share the invite link with three friends. For a local network game, run with `HOST=0.0.0.0` and share your computer's LAN address in place of `localhost`.
+Open `http://localhost:3000`, create a room, and play solo or share the invite link with up to three friends. For a local network game, run with `HOST=0.0.0.0` and share your computer's LAN address in place of `localhost`.
 
 ## Put it online
 

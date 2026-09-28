@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#bfe8f7">
-  <meta name="description" content="A four-player cooperative tile matching game. Invite your herd and clear the meadow together.">
-  <title>Alpaca Meadow · Four-player co-op</title>
+  <meta name="description" content="A cooperative tile matching game for one to four players. Invite your herd and clear the meadow together.">
+  <title>Alpaca Meadow · Co-op for 1–4</title>
   <link rel="stylesheet" href="/style.css">
   <script src="/app.js" defer></script>
 </head>
@@ -45,7 +45,7 @@
           <input id="name" name="name" type="text" maxlength="16" minlength="2" placeholder="e.g. Fluffy" autocomplete="nickname" required>
           <button id="entry-button" class="primary-button" type="submit">Create a room <span aria-hidden="true">↗</span></button>
         </form>
-        <p id="entry-note" class="small-note">No account needed · Four players per room · Play in your browser</p>
+        <p id="entry-note" class="small-note">No account needed · Play solo or with up to three friends · Play in your browser</p>
       </div>
     </section>
 
@@ -67,7 +67,7 @@
       <div id="lobby" class="lobby-panel hidden">
         <div class="lobby-flower" aria-hidden="true">🦙</div>
         <h2>Gather your herd</h2>
-        <p id="lobby-message">Share the link with three friends. The host can start when all four arrive.</p>
+        <p id="lobby-message">Play solo or share the link with up to three friends. The host can start any time.</p>
         <button id="start-button" class="primary-button" type="button">Start the warm-up <span aria-hidden="true">→</span></button>
         <p class="small-note">Each player gets their own board. Clear either stage once to move the whole team forward.</p>
       </div>
@@ -104,6 +104,6 @@
     </section>
     <p id="toast" class="toast hidden" role="status"></p>
   </main>
-  <footer>Made for four friends and one very brave alpaca.</footer>
+  <footer>Made for up to four friends and one very brave alpaca.</footer>
 </body>
 </html>

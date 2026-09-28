@@ -254,9 +254,9 @@ function render(next) {
   $('victory').classList.toggle('hidden', !won);
   $('order-panel').classList.toggle('hidden', lobby || won);
   if (lobby) {
-    $('lobby-message').textContent = state.players.length === 4 ? 'All four alpacas are here. Your team is ready!' : `Share the link with ${4 - state.players.length} more friend${state.players.length === 3 ? '' : 's'}. The host can start when all four arrive.`;
+    const open = 4 - state.players.length;
+    $('lobby-message').textContent = open ? `Play solo or share the link with up to ${open} more friend${open === 1 ? '' : 's'}. The host can start any time.` : 'All four alpacas are here. Your team is ready!';
     $('start-button').classList.toggle('hidden', !state.players.some(player => player.id === state.self.id && player.host));
-    $('start-button').disabled = state.players.length !== 4;
   } else if (won) {
     const winner = state.players.find(player => player.id === state.winnerId);
     $('victory-message').textContent = `${winner?.name || 'Your team'} cleared the hard round in ${formatTime((state.finishedAt - state.startedAt) / 1000)}. Every alpaca gets the win!`;

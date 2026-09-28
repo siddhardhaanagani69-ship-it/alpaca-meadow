@@ -16,6 +16,15 @@ test('both rounds contain exact triples and layered covered tiles', () => {
   }
 });
 
+test('one player can start and clear alone', () => {
+  const room = newRoom('Solo');
+  const [solo] = room.players;
+  action(room, solo, { type: 'start' });
+  assert.equal(room.stage, 'easy');
+  while (room.stage === 'easy') action(room, solo, { type: 'pick', tileId: solo.board.find(tile => exposed(tile, solo.board)).id });
+  assert.equal(room.stage, 'hard');
+});
+
 test('four players can play, trade, and undo exactly', () => {
   const room = newRoom('Host');
   room.code = 'ABC234';
