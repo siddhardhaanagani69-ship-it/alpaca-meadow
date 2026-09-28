@@ -1,0 +1,314 @@
+const ICONS = {
+  carrot: '🥕', wool: '☁️', cheese: '🧀', skewer: '🍡', cutlery: '🍴',
+  peas: '🫛', sprout: '🌱', gloves: '🧤', hat: '🎩', yarn: '🧶',
+  socks: '🧦', corner: '📐', jewel: '💎',
+};
+const TOOL_INFO = {
+  remove: ['🧺', 'Remove', 'Discard three tray cards'],
+  undo: ['↩️', 'Undo', 'Return your last picked tile'],
+  free: ['🪄', 'Free', 'Pick one covered tile'],
+  hammer: ['🔨', 'Hammer', 'Erase one exposed tile'],
+  mix: ['🔀', 'Mix', 'Shuffle the remaining board'],
+};
+const $ = id => document.getElementById(id);
+const params = new URLSearchParams(location.search);
+const roomCode = params.get('room')?.toUpperCase() || '';
+let token = roomCode ? localStorage.getItem(`alpaca:${roomCode}`) : null;
+let source = null;
+let state = null;
+let armed = null;
+let selectedTrayIndex = null;
+let toastTimer = null;
+
+function toast(message) {
+  const box = $('toast');
+  box.textContent = message;
+  box.classList.remove('hidden');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => box.classList.add('hidden'), 3500);
+}
+
+function connection(message, offline = false) {
+  $('connection').textContent = message;
+  $('connection').classList.toggle('offline', offline);
+}
+
+async function request(path, method = 'GET', payload, authorized = true) {
+  const response = await fetch(path, {
+    method,
+    headers: {
+      ...(payload ? { 'Content-Type': 'application/json' } : {}),
+      ...(authorized && token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    ...(payload ? { body: JSON.stringify(payload) } : {}),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Something went wrong.');
+  return data;
+}
+
+async function send(action) {
+  if (!state) return;
+  try {
+    await request(`/api/rooms/${state.code}/action`, 'POST', action);
+    armed = null;
+    selectedTrayIndex = null;
+    render(state);
+  } catch (error) { toast(error.message); }
+}
+
+function showEntry() {
+  $('home').classList.remove('hidden');
+  $('room').classList.add('hidden');
+  if (roomCode) {
+    $('entry-button').innerHTML = 'Join room <span aria-hidden="true">↗</span>';
+    $('entry-note').textContent = `Room ${roomCode} · Ask your host if it has already started.`;
+  }
+}
+
+function joinSession(code, newToken) {
+  localStorage.setItem(`alpaca:${code}`, newToken);
+  location.href = `/?room=${encodeURIComponent(code)}`;
+}
+
+async function connect() {
+  if (!roomCode || !token) return showEntry();
+  try {
+    const first = await request(`/api/rooms/${roomCode}`);
+    render(first);
+  } catch (error) {
+    localStorage.removeItem(`alpaca:${roomCode}`);
+    token = null;
+    toast(error.message);
+    return showEntry();
+  }
+  source?.close();
+  source = new EventSource(`/api/rooms/${roomCode}/events?token=${encodeURIComponent(token)}`);
+  source.onopen = () => connection('Connected to the herd');
+  source.onerror = () => connection('Reconnecting…', true);
+  source.onmessage = event => {
+    try { render(JSON.parse(event.data)); }
+    catch { connection('Sync problem', true); }
+  };
+}
+
+function make(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+
+function renderPlayers() {
+  const container = $('players');
+  container.replaceChildren();
+  for (let index = 0; index < 4; index++) {
+    const player = state.players[index];
+    const card = make('div', `player-card${!player ? ' empty' : ''}${player?.id === state.self.id ? ' self' : ''}`);
+    const avatar = make('div', 'player-avatar', player ? ['🦙', '🌼', '🍀', '⭐'][index] : '＋');
+    avatar.setAttribute('aria-hidden', 'true');
+    card.append(avatar);
+    const info = make('div', 'player-info');
+    info.append(make('strong', '', player ? player.name : 'Waiting for friend'));
+    if (player) {
+      const detail = player.host ? 'Host' : player.sos ? 'SOS · needs help' : state.stage === 'lobby' ? 'Ready to play' : `${player.progress}% cleared · ${player.trayCount}/7 tray`;
+      info.append(make('small', '', detail));
+      if (player.request) info.append(make('span', 'request-bubble', `Needs ${ICONS[player.request]} ${player.request}`));
+      card.append(info);
+      if (player.id !== state.self.id && selectedTrayIndex !== null && ['easy', 'hard'].includes(state.stage)) {
+        const button = make('button', 'send-button', `Send ${ICONS[state.self.tray[selectedTrayIndex]] || ''}`);
+        button.type = 'button';
+        button.addEventListener('click', () => send({ type: 'send', index: selectedTrayIndex, targetId: player.id }));
+        card.append(button);
+      }
+      const online = make('span', `player-online${player.online ? '' : ' off'}`);
+      online.title = player.online ? 'Online' : 'Offline';
+      card.append(online);
+    }
+    if (!player) card.append(info);
+    container.append(card);
+  }
+}
+
+function renderBoard() {
+  const board = $('board');
+  board.replaceChildren();
+  for (const tile of state.self.board) {
+    if (tile.removed) continue;
+    const covered = state.self.board.some(other => !other.removed && other.layer > tile.layer && tile.x < other.x + 124 && tile.x + 124 > other.x && tile.y < other.y + 124 && tile.y + 124 > other.y);
+    const button = make('button', `tile ${covered ? 'covered' : 'exposed'} ${tile.type === 'jewel' ? 'jewel' : ''}${covered && armed === 'free' ? ' free-target' : ''}`);
+    button.type = 'button';
+    button.style.left = `${tile.x / 10}%`;
+    button.style.top = `${tile.y / 10}%`;
+    button.style.setProperty('--layer', tile.layer + 1);
+    button.setAttribute('aria-label', `${tile.type} tile${covered ? ', covered' : ', playable'}`);
+    button.title = `${tile.type}${covered ? ' · covered' : ''}`;
+    button.append(make('span', 'icon', ICONS[tile.type] || '•'));
+    button.disabled = covered && armed !== 'free';
+    button.addEventListener('click', () => {
+      if (armed === 'hammer') return send({ type: 'hammer', tileId: tile.id });
+      if (armed === 'alpaca') return send({ type: 'alpaca', tileId: tile.id });
+      send({ type: 'pick', tileId: tile.id, free: covered && armed === 'free' });
+    });
+    board.append(button);
+  }
+  const remaining = state.self.board.filter(tile => !tile.removed).length;
+  $('board-hint').textContent = armed === 'free' ? 'Tap a dimmed tile to use Free Choice.' : armed === 'hammer' ? 'Tap a bright tile to erase it with the Hammer.' : armed === 'alpaca' ? 'Tap a bright tile to call the alpaca and clear every tray.' : remaining ? 'Tap bright tiles. Dimmed tiles are covered by another layer.' : 'Your board is clear!';
+}
+
+function renderTray() {
+  const tray = $('tray');
+  tray.replaceChildren();
+  state.self.tray.forEach((type, index) => {
+    const button = make('button', `tray-tile${selectedTrayIndex === index ? ' selected' : ''}`, ICONS[type]);
+    button.type = 'button';
+    button.title = type;
+    button.setAttribute('aria-label', `${type} in tray, select to store or send`);
+    button.addEventListener('click', () => {
+      selectedTrayIndex = selectedTrayIndex === index ? null : index;
+      renderTray();
+      renderPlayers();
+    });
+    tray.append(button);
+  });
+  if (!state.self.tray.length) tray.append(make('span', 'tray-empty', 'Your picks land here · match three to clear'));
+  $('tray-count').textContent = `${state.self.tray.length} / 7`;
+  $('sos').classList.toggle('hidden', state.self.tray.length < 7);
+  $('tray-hint').textContent = selectedTrayIndex === null ? 'Select a tray tile to store it or send it to a teammate.' : `Selected ${ICONS[state.self.tray[selectedTrayIndex]]} ${state.self.tray[selectedTrayIndex]}. Store it or send it above.`;
+  $('store-button').disabled = selectedTrayIndex === null || state.warehouse.length >= 6;
+  $('gauge-fill').style.width = `${state.self.gauge * 50}%`;
+  $('gauge-count').textContent = `${state.self.gauge} / 2`;
+  $('alpaca-button').disabled = state.self.gauge < 2;
+  $('alpaca-button').classList.toggle('active', state.self.gauge >= 2);
+  $('alpaca-button').textContent = armed === 'alpaca' ? '🦙 Choose a bright tile above · tap again to cancel' : '🦙 Call the alpaca · clear every tray';
+}
+
+function renderTools() {
+  const container = $('tools');
+  container.replaceChildren();
+  for (const [type, [icon, label, title]] of Object.entries(TOOL_INFO)) {
+    const count = state.self.tools[type];
+    const button = make('button', `tool${count ? ' available' : ''}${armed === type ? ' armed' : ''}`);
+    button.type = 'button';
+    button.disabled = count < 1 || (type === 'undo' && !state.self.canUndo);
+    button.title = title;
+    button.setAttribute('aria-label', `${label}, ${count} available. ${title}`);
+    button.append(make('span', 'tool-icon', icon), make('span', '', label), make('small', '', `×${count}`));
+    button.addEventListener('click', () => {
+      if (type === 'free' || type === 'hammer') {
+        armed = armed === type ? null : type;
+        renderBoard();
+        renderTools();
+      } else send({ type });
+    });
+    container.append(button);
+  }
+}
+
+function renderWarehouse() {
+  const container = $('warehouse');
+  container.replaceChildren();
+  for (const card of state.warehouse) {
+    const button = make('button', 'warehouse-tile', ICONS[card.type]);
+    button.type = 'button';
+    button.title = `${card.type} from ${card.from} · tap to take`;
+    button.setAttribute('aria-label', `Take ${card.type} from the warehouse`);
+    button.addEventListener('click', () => send({ type: 'take', cardId: card.id }));
+    container.append(button);
+  }
+  if (!state.warehouse.length) container.append(make('span', 'warehouse-empty', 'No cards stored yet'));
+  $('warehouse-count').textContent = `${state.warehouse.length} / 6`;
+}
+
+function renderFeed() {
+  $('feed').replaceChildren(...state.feed.map(item => make('li', '', item.text)));
+}
+
+function render(next) {
+  if (state && state.self.tray.join('|') !== next.self.tray.join('|')) selectedTrayIndex = null;
+  state = next;
+  $('home').classList.add('hidden');
+  $('room').classList.remove('hidden');
+  $('room-code').textContent = state.code;
+  $('invite-url').textContent = `${location.origin}/?room=${state.code}`;
+  renderPlayers();
+  const lobby = state.stage === 'lobby';
+  const won = state.stage === 'won';
+  $('lobby').classList.toggle('hidden', !lobby);
+  $('play').classList.toggle('hidden', lobby || won);
+  $('victory').classList.toggle('hidden', !won);
+  if (lobby) {
+    $('lobby-message').textContent = state.players.length === 4 ? 'All four alpacas are here. Your team is ready!' : `Share the link with ${4 - state.players.length} more friend${state.players.length === 3 ? '' : 's'}. The host can start when all four arrive.`;
+    $('start-button').classList.toggle('hidden', !state.players.some(player => player.id === state.self.id && player.host));
+    $('start-button').disabled = state.players.length !== 4;
+  } else if (won) {
+    const winner = state.players.find(player => player.id === state.winnerId);
+    $('victory-message').textContent = `${winner?.name || 'Your team'} cleared the hard round in ${formatTime((state.finishedAt - state.startedAt) / 1000)}. Every alpaca gets the win!`;
+    $('play-again').classList.toggle('hidden', !state.players.some(player => player.id === state.self.id && player.host));
+  } else {
+    const hard = state.stage === 'hard';
+    $('stage-kicker').textContent = hard ? 'ROUND 2 OF 2 · THE CHALLENGE' : 'ROUND 1 OF 2 · WARM-UP';
+    $('stage-title').textContent = hard ? 'The tricky meadow' : 'A gentle start';
+    const self = state.players.find(player => player.id === state.self.id);
+    $('progress-label').textContent = `${self.progress}% cleared`;
+    $('progress-fill').style.width = `${self.progress}%`;
+    $('order-title').textContent = `${ICONS[state.self.order.type]} Collect ${state.self.order.type}`;
+    $('order-progress').textContent = `${state.self.order.count} / ${state.self.order.goal}`;
+    $('restart-button').classList.toggle('hidden', !self.host);
+    if (selectedTrayIndex >= state.self.tray.length) selectedTrayIndex = null;
+    renderBoard();
+    renderTray();
+    renderTools();
+    renderWarehouse();
+    renderFeed();
+    $('request-kind').value = self.request || '';
+  }
+  renderTimer();
+}
+
+function formatTime(seconds) {
+  const total = Math.max(0, Math.floor(seconds));
+  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+}
+
+function renderTimer() {
+  if (!state?.startedAt) return;
+  $('timer').textContent = formatTime(((state.finishedAt || Date.now()) - state.startedAt) / 1000);
+}
+
+for (const [type, icon] of Object.entries(ICONS)) {
+  const option = make('option', '', `${icon} ${type}`);
+  option.value = type;
+  $('request-kind').append(option);
+}
+$('entry-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  const name = $('name').value.trim();
+  $('entry-button').disabled = true;
+  try {
+    const result = await request(roomCode ? `/api/rooms/${roomCode}/join` : '/api/rooms', 'POST', { name }, false);
+    joinSession(result.code, result.token);
+  } catch (error) {
+    toast(error.message);
+    $('entry-button').disabled = false;
+  }
+});
+$('copy-link').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(`${location.origin}/?room=${state.code}`);
+    toast('Invite link copied. Send it to three friends!');
+  } catch { toast(`Room code: ${state.code}`); }
+});
+$('start-button').addEventListener('click', () => send({ type: 'start' }));
+$('play-again').addEventListener('click', () => send({ type: 'start' }));
+$('restart-button').addEventListener('click', () => send({ type: 'start' }));
+$('store-button').addEventListener('click', () => send({ type: 'put', index: selectedTrayIndex }));
+$('alpaca-button').addEventListener('click', () => {
+  armed = armed === 'alpaca' ? null : 'alpaca';
+  renderBoard();
+  renderTray();
+  renderTools();
+});
+$('request-kind').addEventListener('change', event => send({ type: 'request', kind: event.target.value || null }));
+setInterval(renderTimer, 1000);
+connect();

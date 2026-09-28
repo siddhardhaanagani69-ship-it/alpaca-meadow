@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f7eacb">
+  <meta name="description" content="A four-player cooperative tile matching game. Invite your herd and clear the meadow together.">
+  <title>Alpaca Meadow · Four-player co-op</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="sky-cloud cloud-one" aria-hidden="true"></div>
+  <div class="sky-cloud cloud-two" aria-hidden="true"></div>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Alpaca Meadow home"><span class="brand-mark">✿</span><span>alpaca <b>meadow</b></span></a>
+    <span id="connection" class="connection" role="status">Ready to play</span>
+  </header>
+
+  <main>
+    <section id="home" class="home-card">
+      <div class="hero-art" aria-hidden="true">
+        <span class="sparkle sparkle-one">✦</span><span class="sparkle sparkle-two">✧</span>
+        <svg class="alpaca-art" viewBox="0 0 260 250" role="img" aria-label="Smiling alpaca">
+          <ellipse cx="130" cy="223" rx="80" ry="15" fill="#d4b985" opacity=".45"/>
+          <path d="M72 197c-9-27 9-48 34-52h52c28 5 43 25 32 52l-9 24H82z" fill="#fff7e5" stroke="#9b664b" stroke-width="5"/>
+          <path d="M81 70c-9-18-8-36 2-42 11-5 24 6 27 26M152 54c3-20 16-31 27-26 10 6 11 24 2 42" fill="#fff7e5" stroke="#9b664b" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M77 61c-9 4-16 17-16 29-12 8-17 23-13 37-3 18 8 31 25 32 7 19 28 31 57 31s50-12 57-31c17-1 28-14 25-32 4-14-1-29-13-37 0-12-7-25-16-29-16-31-90-36-106 0z" fill="#fff9ea" stroke="#9b664b" stroke-width="5"/>
+          <path d="M71 80c9-28 32-38 60-38 31 0 51 12 58 39-10-8-18-3-22 4-8-8-19-6-25 2-8-10-21-10-29-1-12-9-22-7-29 3-5-7-9-11-13-9z" fill="#f7e0b5"/>
+          <ellipse cx="102" cy="123" rx="5" ry="7" fill="#543a34"/><ellipse cx="158" cy="123" rx="5" ry="7" fill="#543a34"/>
+          <ellipse cx="86" cy="139" rx="12" ry="7" fill="#f5b4a2" opacity=".7"/><ellipse cx="174" cy="139" rx="12" ry="7" fill="#f5b4a2" opacity=".7"/>
+          <path d="M111 143c3-10 33-10 38 0 4 11-5 21-19 21s-23-10-19-21z" fill="#f7dfbb" stroke="#9b664b" stroke-width="4"/>
+          <path d="M124 143h12l-6 6z" fill="#543a34"/><path d="M130 149v5m-10 0q10 9 20 0" fill="none" stroke="#543a34" stroke-width="3" stroke-linecap="round"/>
+          <path d="M101 188l-16 23m74-23 16 23" stroke="#9b664b" stroke-width="5" stroke-linecap="round"/>
+          <path d="M70 183c-11 0-18 12-14 22 3 9 15 10 20 3m114-25c11 0 18 12 14 22-3 9-15 10-20 3" fill="#fff7e5" stroke="#9b664b" stroke-width="5"/>
+        </svg>
+        <span class="little-tile carrot" aria-hidden="true">🥕</span><span class="little-tile gem" aria-hidden="true">💎</span>
+      </div>
+      <div class="hero-copy">
+        <p class="eyebrow">A LITTLE PUZZLE FOR YOUR HERD</p>
+        <h1>Four friends.<br><em>One</em> tricky meadow.</h1>
+        <p class="intro">Pick exposed tiles, match three in your tray, and help your team survive the hard round. One clear wins for everyone.</p>
+        <form id="entry-form" class="entry-form">
+          <label for="name">YOUR ALPACA NAME</label>
+          <input id="name" name="name" type="text" maxlength="16" minlength="2" placeholder="e.g. Fluffy" autocomplete="nickname" required>
+          <button id="entry-button" class="primary-button" type="submit">Create a room <span aria-hidden="true">↗</span></button>
+        </form>
+        <p id="entry-note" class="small-note">No account needed · Four players per room · Play in your browser</p>
+      </div>
+    </section>
+
+    <section id="room" class="room-shell hidden" aria-label="Game room">
+      <div class="room-bar">
+        <div><p class="eyebrow">YOUR PRIVATE MEADOW</p><h1 id="room-title">Room <span id="room-code"></span></h1></div>
+        <button id="copy-link" class="outline-button" type="button">Copy invite link ↗</button>
+      </div>
+      <p id="invite-url" class="invite-url"></p>
+      <div id="players" class="players" aria-label="Players"></div>
+      <div id="lobby" class="lobby-panel hidden">
+        <div class="lobby-flower" aria-hidden="true">✿</div>
+        <h2>Gather your herd</h2>
+        <p id="lobby-message">Share the link with three friends. The host can start when all four arrive.</p>
+        <button id="start-button" class="primary-button" type="button">Start the warm-up <span aria-hidden="true">→</span></button>
+        <p class="small-note">Each player gets their own board. Clear either stage once to move the whole team forward.</p>
+      </div>
+
+      <div id="play" class="play-layout hidden">
+        <div class="main-column">
+          <div class="round-heading">
+            <div><p id="stage-kicker" class="eyebrow">ROUND 1 OF 2 · WARM-UP</p><h2 id="stage-title">A gentle start</h2></div>
+            <div id="timer" class="timer" aria-label="Elapsed time">00:00</div>
+          </div>
+          <div class="progress-line"><span id="progress-label">0% cleared</span><div class="progress-track"><div id="progress-fill"></div></div></div>
+          <div class="board-frame"><div id="board" class="board" aria-label="Layered tile board"></div></div>
+          <p id="board-hint" class="board-hint">Tap bright tiles. Dimmed tiles are covered by another layer.</p>
+
+          <div class="order-panel"><div><p class="eyebrow">A LITTLE ORDER</p><strong id="order-title">Collect tiles</strong><span id="order-progress">0 / 3</span></div><span class="order-reward">Finish it for a free tool 🎁</span></div>
+
+          <div class="tray-panel">
+            <div class="section-heading"><h3>Your tray <span id="tray-count">0 / 7</span></h3><span id="sos" class="sos hidden">SOS · NEED HELP</span></div>
+            <div id="tray" class="tray" aria-label="Your selected tiles"></div>
+            <div class="gauge-row"><span>💎 Alpaca power</span><div class="gauge-track"><div id="gauge-fill"></div></div><span id="gauge-count">0 / 2</span></div>
+            <button id="alpaca-button" class="alpaca-button" type="button" disabled>🦙 Call the alpaca · clear every tray</button>
+            <p id="tray-hint" class="small-note">Select a tray tile to store it or send it to a teammate.</p>
+          </div>
+
+          <div class="tools-panel"><div class="section-heading"><h3>Helpful little tools</h3></div><div id="tools" class="tools"></div></div>
+        </div>
+        <aside class="team-column">
+          <section class="aside-card"><div class="section-heading"><h3>Team warehouse</h3><span id="warehouse-count">0 / 6</span></div><p class="small-note">Store a tile for anyone to take. Tap a card to move it to your tray.</p><div id="warehouse" class="warehouse"></div><button id="store-button" class="outline-button compact" type="button" disabled>Store selected tile</button></section>
+          <section class="aside-card"><div class="section-heading"><h3>Ask the herd</h3></div><p class="small-note">Show your teammates which card you need next.</p><label class="sr-only" for="request-kind">Requested tile</label><select id="request-kind"><option value="">No request</option></select></section>
+          <section class="aside-card"><div class="section-heading"><h3>Meadow chatter</h3></div><ul id="feed" class="feed" aria-live="polite"></ul></section>
+          <button id="restart-button" class="text-button hidden" type="button">Restart with this herd</button>
+        </aside>
+      </div>
+      <div id="victory" class="victory hidden"><span class="victory-emoji" aria-hidden="true">🦙 ✨</span><p class="eyebrow">EVERYONE WINS</p><h2>The meadow is clear!</h2><p id="victory-message"></p><button id="play-again" class="primary-button" type="button">Play again ↗</button></div>
+    </section>
+    <p id="toast" class="toast hidden" role="status"></p>
+  </main>
+  <footer>Made for four friends and one very brave alpaca.</footer>
+</body>
+</html>
